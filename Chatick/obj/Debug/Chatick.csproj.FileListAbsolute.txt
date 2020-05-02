@@ -1,0 +1,16 @@
+C:\Users\1\source\repos\Chatick\Chatick\bin\Debug\Chatick.exe.config
+C:\Users\1\source\repos\Chatick\Chatick\bin\Debug\Chatick.exe
+C:\Users\1\source\repos\Chatick\Chatick\bin\Debug\Chatick.pdb
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\Chatick.csprojAssemblyReference.cache
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\View\ChatView.g.cs
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\App.g.cs
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\GeneratedInternalTypeHelper.g.cs
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\Chatick_MarkupCompile.cache
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\Chatick_MarkupCompile.lref
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\View\ChatView.baml
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\Chatick.g.resources
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\Chatick.Properties.Resources.resources
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\Chatick.csproj.GenerateResource.cache
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\Chatick.csproj.CoreCompileInputs.cache
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\Chatick.exe
+C:\Users\1\source\repos\Chatick\Chatick\obj\Debug\Chatick.pdb
