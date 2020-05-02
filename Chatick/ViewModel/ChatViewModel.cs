@@ -29,14 +29,23 @@ namespace Chatick
         private PeerNameRegistration peerNameRegistration;
         private string serviceUrl;
         private bool isRegistered = false;
+        private ChatView viewDelegate;
+        public string username;
+        private List<P2PInit> peers = new List<P2PInit>();
+
+        public ChatViewModel(ChatView viewDelegate)
+        {
+            this.viewDelegate = viewDelegate;
+        }
         public void OnViewLoaded()
         {
             Debug.WriteLine("opened");
 
             string port = new Random().Next(0, 5000).ToString();
-            string username = $"Пользователь {new Random().Next(1, 400).ToString()}";
+            username = $"Пользователь {new Random().Next(1, 400).ToString()}";
 
             startupConnectionWith(port, username);
+            updatePeers();
         }
 
         public void startupConnectionWith(string port, string username) 
@@ -45,22 +54,14 @@ namespace Chatick
             {
                 stopServiceAndRegistration();
             }
-            // Установка заголовка окна
-            //this.Title = string.Format("P2P приложение - {0}", port);
 
             serviceUrl = string.Format("net.tcp://localhost:{0}/P2PService", port);
 
-            //this.Title = serviceUrl;
-            // Выполнение проверки, не является ли адрес null
             if (serviceUrl == null)
             {
-                // Отображение ошибки и завершение работы приложения
-                //MessageBox.Show(this, "Не удается определить адрес конечной точки WCF.", "Networking Error",
-                //MessageBoxButton.OK, MessageBoxImage.Stop);
                 Application.Current.Shutdown();
             }
 
-            // Регистрация и запуск службы WCF
             localService = new P2PService(this, username);
             host = new ServiceHost(localService, new Uri(serviceUrl));
             NetTcpBinding binding = new NetTcpBinding();
@@ -74,21 +75,17 @@ namespace Chatick
             }
             catch (AddressAlreadyInUseException)
             {
-                // Отображение ошибки и завершение работы приложения
-                //MessageBox.Show(this, "Не удается начать прослушивание, порт занят.", "WCF Error",
-                //MessageBoxButton.OK, MessageBoxImage.Stop);
                 Application.Current.Shutdown();
             }
 
-            // Создание имени равноправного участника (пира)
             peerName = new PeerName("P2P Sample", PeerNameType.Unsecured);
 
-            // Подготовка процесса регистрации имени равноправного участника в локальном облаке
             peerNameRegistration = new PeerNameRegistration(peerName, int.Parse(port));
             peerNameRegistration.Cloud = Cloud.AllLinkLocal;
 
-            // Запуск процесса регистрации
             peerNameRegistration.Start();
+
+            
         }
         public void onViewClosing()
         {
@@ -97,75 +94,48 @@ namespace Chatick
 
         public void stopServiceAndRegistration() 
         {
-            // Stop peer registration
             peerNameRegistration.Stop();
-
-            // Stop WCF-service
             host.Close();
-
             isRegistered = false;
         }
 
-            public void sendMessage(string message, RoutedEventArgs e)
+        public void sendMessage(string message, RoutedEventArgs e)
         {
-            if (((Button)e.OriginalSource).Name == "MessageButton")
-            {
-                // Получение пира и прокси, для отправки сообщения
-                P2PInit peerEntry = ((Button)e.OriginalSource).DataContext as P2PInit;
-                if (peerEntry != null && peerEntry.ServiceProxy != null)
+            peers.ForEach(delegate(P2PInit peer) {
+                try
                 {
-                    try
-                    {
-                        peerEntry.ServiceProxy.SendMessage(message, ConfigurationManager.AppSettings["username"]);
-                    }
-                    catch (CommunicationException)
-                    {
-
-                    }
+                    peer.ServiceProxy.SendMessage(message, username);
                 }
-            }
+                catch (CommunicationException)
+                {
+
+                }
+            });
         }
 
         public void updatePeers()
         {
-            Debug.WriteLine("Clicked update");
-
-            // Создание распознавателя и добавление обработчиков событий
             PeerNameResolver resolver = new PeerNameResolver();
             resolver.ResolveProgressChanged +=
                 new EventHandler<ResolveProgressChangedEventArgs>(resolver_ResolveProgressChanged);
             resolver.ResolveCompleted +=
                 new EventHandler<ResolveCompletedEventArgs>(resolver_ResolveCompleted);
 
-            // Подготовка к добавлению новых пиров
-            //PeerList.Items.Clear();
-            //RefreshButton.IsEnabled = false;
+            peers.Clear();
+            viewDelegate.ClearPeers();
 
-            // Преобразование незащищенных имен пиров асинхронным образом
             resolver.ResolveAsync(new PeerName("0.P2P Sample"), 1);
         }
 
         void resolver_ResolveCompleted(object sender, ResolveCompletedEventArgs e)
         {
-            /*
-            // Сообщение об ошибке, если в облаке не найдены пиры
-            if (PeerList.Items.Count == 0)
-            {
-                PeerList.Items.Add(
-                   new P2PInit
-                   {
-                       DisplayString = "Пиры не найдены.",
-                       ButtonsEnabled = true
-                   });
-            }
-            // Повторно включаем кнопку "обновить"
-            RefreshButton.IsEnabled = true;
-            */
+            viewDelegate.updatingPeersFinished();
         }
 
         void resolver_ResolveProgressChanged(object sender, ResolveProgressChangedEventArgs e)
         {
             PeerNameRecord peer = e.PeerNameRecord;
+            List<P2PInit> newPeers = new List<P2PInit>();
 
             foreach (IPEndPoint ep in peer.EndPointCollection)
             {
@@ -180,16 +150,14 @@ namespace Chatick
                         IP2PService serviceProxy = ChannelFactory<IP2PService>.CreateChannel(
                             binding, new EndpointAddress(endpointUrl));
 
-                        /*
-                        PeerList.Items.Add(
-                           new P2PInit
-                           {
-                               PeerName = peer.PeerName,
-                               ServiceProxy = serviceProxy,
-                               DisplayString = serviceProxy.GetName(),
-                               ButtonsEnabled = true
-                           });
-                        */
+                        P2PInit newPeer = new P2PInit
+                        {
+                            PeerName = peer.PeerName,
+                            ServiceProxy = serviceProxy,
+                            DisplayString = serviceProxy.GetName(),
+                            ButtonsEnabled = true
+                        };
+                        newPeers.Add(newPeer);
                     }
                     catch (EndpointNotFoundException ex)
                     {
@@ -197,38 +165,14 @@ namespace Chatick
                     }
                 }
             }
-        }
-
-        public void peerListItemPressed(RoutedEventArgs e)
-        {
-            Debug.WriteLine("Peer list pressed");
-
-            // Убедимся, что пользователь щелкнул по кнопке с именем MessageButton
-            if (((Button)e.OriginalSource).Name == "MessageButton")
-            {
-                // Получение пира и прокси, для отправки сообщения
-                P2PInit peerEntry = ((Button)e.OriginalSource).DataContext as P2PInit;
-                if (peerEntry != null && peerEntry.ServiceProxy != null)
-                {
-                    try
-                    {
-                        Debug.WriteLine("Peer list pressed");
-                        peerEntry.ServiceProxy.SendMessage("Привет друг!", ConfigurationManager.AppSettings["username"]);
-                        Debug.WriteLine("Peer list pressed");
-                    }
-                    catch (CommunicationException)
-                    {
-
-                    }
-                }
-            }
+            peers = newPeers;
+            viewDelegate.UpdatePeers(newPeers);
+            
         }
 
         public void DisplayMessage(string message, string from)
         {
-            Debug.WriteLine(message);
-            //MessageBox.Show(this, message, string.Format("Сообщение от {0}", from),
-            //MessageBoxButton.OK, MessageBoxImage.Information);
+            viewDelegate.AppendMessage(message, from);
         }
     }
 }

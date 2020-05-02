@@ -25,37 +25,83 @@ namespace Chatick
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
     public partial class ChatView : Window
-	{
-		
-        private ChatViewModel viewModel = new ChatViewModel();
+    {
 
-		public ChatView()
-		{
-			InitializeComponent();
-		}
-        
+        private ChatViewModel viewModel;
+
+        public ChatView()
+        {
+            InitializeComponent();
+            viewModel = new ChatViewModel(this);
+        }
+
         private void OnWindowLoad(object sender, RoutedEventArgs e)
-		{
+        {
             viewModel.OnViewLoaded();
         }
-		private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             viewModel.onViewClosing();
         }
 
-        private void sendMessage(string message, RoutedEventArgs e)
+
+        public void UpdatePeers(List<P2PInit> peers)
         {
-            viewModel.sendMessage(message, e);
+            ClearPeers();
+            peers.ForEach(delegate (P2PInit peer)
+                {
+                    PeerList.Items.Add(peer);
+                }
+            );
         }
 
-        private void UpdateButtonPressed(object sender, RoutedEventArgs e)
+        private void SendMessagePressed(object sender, RoutedEventArgs e)
+        {
+            viewModel.sendMessage(MessageText.Text, e);
+            pushMessage(new ChatMessage()
+                {
+                    MessageText = MessageText.Text,
+                    MessageAuthor = "Я"
+                }
+            );
+        }
+        private void pushMessage(ChatMessage message)
+        {
+            MessagesList.Items.Add(message);
+            MessagesList.SelectedIndex = MessagesList.Items.Count - 1;
+            MessagesList.ScrollIntoView(MessagesList.SelectedItem);
+            MessagesList.SelectedIndex = -1;
+        }
+        private void UpdatePeersButtonPressed(object sender, RoutedEventArgs e)
         {
             viewModel.updatePeers();
         }
 
-        private void PeerListPressed(object sender, RoutedEventArgs e)
+        public void ClearPeers()
         {
-            viewModel.peerListItemPressed(e);
+            PeerList.Items.Clear();
         }
+        public void AppendMessage(string message, string from)
+        {
+            pushMessage(new ChatMessage()
+                {
+                    MessageText = message,
+                    MessageAuthor = from
+                }
+            );
+        }
+        public void updatingPeersFinished()
+        {
+            if (PeerList.Items.Count == 0)
+            {
+                PeerList.Items.Add(
+                   new P2PInit
+                   {
+                       DisplayString = "К сожалению, участников нет...",
+                       ButtonsEnabled = true
+                   });
+            }
+        }
+
     }
 }
