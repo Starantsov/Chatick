@@ -41,7 +41,7 @@ namespace Chatick
         }
         private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            viewModel.onViewClosing();
+            viewModel.OnViewClosing();
         }
 
 
@@ -57,12 +57,16 @@ namespace Chatick
 
         private void SendMessagePressed(object sender, RoutedEventArgs e)
         {
-            viewModel.sendMessage(MessageText.Text, e);
+            string messageToSend = MessageText.Text;
+
+            if (messageToSend == "") { return; }
+            MessageText.Text = "";
+            viewModel.sendMessage(messageToSend);
             pushMessage(new ChatMessage()
-                {
-                    MessageText = MessageText.Text,
-                    MessageAuthor = "Я"
-                }
+            {
+                MessageText = messageToSend,
+                MessageAuthor = "Я"
+            }
             );
         }
         private void pushMessage(ChatMessage message)
@@ -84,10 +88,10 @@ namespace Chatick
         public void AppendMessage(string message, string from)
         {
             pushMessage(new ChatMessage()
-                {
-                    MessageText = message,
-                    MessageAuthor = from
-                }
+            {
+                MessageText = message,
+                MessageAuthor = from
+            }
             );
         }
         public void updatingPeersFinished()
@@ -101,6 +105,11 @@ namespace Chatick
                        ButtonsEnabled = true
                    });
             }
+        }
+
+        public void setViewTitle(string title)
+        {
+            Title = title;
         }
 
     }

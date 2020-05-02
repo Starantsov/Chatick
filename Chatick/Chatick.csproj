@@ -40,6 +40,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -68,6 +69,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Model\ChatMessage.cs" />
+    <Compile Include="RSA\RSAService.cs" />
     <Compile Include="ViewModel\ChatViewModel.cs" />
     <Compile Include="View\ChatView.xaml.cs">
       <DependentUpon>ChatView.xaml</DependentUpon>

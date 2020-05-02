@@ -1,4 +1,5 @@
 ﻿using System.Net.PeerToPeer;
+using System.Security.Cryptography;
 
 namespace Chatick
 {
@@ -8,5 +9,6 @@ namespace Chatick
 		public IP2PService ServiceProxy { get; set; }
 		public string DisplayString { get; set; }
 		public bool ButtonsEnabled { get; set; }
+		public RSAParameters PublicKey { get; set; }
 	}
 }

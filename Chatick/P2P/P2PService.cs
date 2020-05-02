@@ -4,19 +4,22 @@ using System.Linq;
 using System.Text;
 using System.Runtime.Serialization;
 using System.ServiceModel;
+using System.Security.Cryptography;
 
 namespace Chatick
 {
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
-    class P2PService: IP2PService
-	{
+    class P2PService : IP2PService
+    {
         private ChatViewModel appViewModel;
         private string username;
+        private RSAParameters publicKey;
 
-        public P2PService(ChatViewModel appViewModel, string username)
+        public P2PService(ChatViewModel appViewModel, string username, RSAParameters publicKey)
         {
             this.appViewModel = appViewModel;
             this.username = username;
+            this.publicKey = publicKey;
         }
 
         public string GetName()
@@ -24,7 +27,12 @@ namespace Chatick
             return username;
         }
 
-        public void SendMessage(string message, string from)
+        public RSAParameters GetPublicKey()
+        {
+            return publicKey;
+        }
+
+        public void SendMessage(byte[] message, string from)
         {
             appViewModel.DisplayMessage(message, from);
         }

@@ -77,7 +77,7 @@
 					<ListBox.ItemTemplate>
 
 						<DataTemplate>
-							<StackPanel Background="Aqua">
+							<StackPanel>
 								<TextBlock 
 									Text="{Binding Path=MessageAuthor}"
 									TextWrapping="Wrap"	

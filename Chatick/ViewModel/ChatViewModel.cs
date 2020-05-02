@@ -44,8 +44,10 @@ namespace Chatick
             string port = new Random().Next(0, 5000).ToString();
             username = $"Пользователь {new Random().Next(1, 400).ToString()}";
 
+            RSAService.GenerateKeys();
             startupConnectionWith(port, username);
             updatePeers();
+            viewDelegate.setViewTitle(username);
         }
 
         public void startupConnectionWith(string port, string username) 
@@ -62,7 +64,7 @@ namespace Chatick
                 Application.Current.Shutdown();
             }
 
-            localService = new P2PService(this, username);
+            localService = new P2PService(this, username, RSAService.publicKey);
             host = new ServiceHost(localService, new Uri(serviceUrl));
             NetTcpBinding binding = new NetTcpBinding();
             binding.Security.Mode = SecurityMode.None;
@@ -78,7 +80,7 @@ namespace Chatick
                 Application.Current.Shutdown();
             }
 
-            peerName = new PeerName("P2P Sample", PeerNameType.Unsecured);
+            peerName = new PeerName("P2P Chatick", PeerNameType.Unsecured);
 
             peerNameRegistration = new PeerNameRegistration(peerName, int.Parse(port));
             peerNameRegistration.Cloud = Cloud.AllLinkLocal;
@@ -87,24 +89,26 @@ namespace Chatick
 
             
         }
-        public void onViewClosing()
+        public void OnViewClosing()
         {
             stopServiceAndRegistration();
         }
 
         public void stopServiceAndRegistration() 
         {
+            sendMessage("Покинул канал.");
             peerNameRegistration.Stop();
             host.Close();
             isRegistered = false;
         }
 
-        public void sendMessage(string message, RoutedEventArgs e)
+        public void sendMessage(string message)
         {
             peers.ForEach(delegate(P2PInit peer) {
                 try
                 {
-                    peer.ServiceProxy.SendMessage(message, username);
+                    byte[] encrypted = RSAService.EncryptWithKey(Encoding.UTF8.GetBytes(message), peer.PublicKey);
+                    peer.ServiceProxy.SendMessage(encrypted, username);
                 }
                 catch (CommunicationException)
                 {
@@ -124,7 +128,7 @@ namespace Chatick
             peers.Clear();
             viewDelegate.ClearPeers();
 
-            resolver.ResolveAsync(new PeerName("0.P2P Sample"), 1);
+            resolver.ResolveAsync(new PeerName("0.P2P Chatick"), 1);
         }
 
         void resolver_ResolveCompleted(object sender, ResolveCompletedEventArgs e)
@@ -155,11 +159,12 @@ namespace Chatick
                             PeerName = peer.PeerName,
                             ServiceProxy = serviceProxy,
                             DisplayString = serviceProxy.GetName(),
-                            ButtonsEnabled = true
+                            ButtonsEnabled = true,
+                            PublicKey = serviceProxy.GetPublicKey()
                         };
                         newPeers.Add(newPeer);
                     }
-                    catch (EndpointNotFoundException ex)
+                    catch (EndpointNotFoundException)
                     {
 
                     }
@@ -170,9 +175,21 @@ namespace Chatick
             
         }
 
-        public void DisplayMessage(string message, string from)
+        public void DisplayMessage(byte[] message, string from)
         {
-            viewDelegate.AppendMessage(message, from);
+            string msg;
+
+            try
+            {
+                byte[] decrypted = RSAService.Decrypt(message);
+                msg = Encoding.UTF8.GetString(decrypted);
+            }
+            catch (System.Security.Cryptography.CryptographicException)
+            {
+                msg = "Сообщение не удалось расшифровать. \nПубличный и приватный ключи не совпадают";
+            }
+            viewDelegate.AppendMessage(msg, from);
+            updatePeers();
         }
     }
 }
